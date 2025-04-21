@@ -1,0 +1,42 @@
+name: End to End CI/CD for Book My Show Application
+
+on:
+  push:
+    branches:
+      - "master"
+      - "main"
+      - "task/**"
+  pull_request:
+    branches:
+      - "master"
+      - "main"
+      - "task/**"
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    # inputs:
+    #   is_push_image:
+    #     description: "Do you want to push Docker image to Docker Hub ?"
+    #     required: true
+    #     default: true
+    #     type: boolean
+    #   is_deploy_image:
+    #     description: "Do you want to deploy Docker image to AKS ?"
+    #     required: true
+    #     default: false
+    #     type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  maven-compile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ls
+        run: |
+          ls -la
