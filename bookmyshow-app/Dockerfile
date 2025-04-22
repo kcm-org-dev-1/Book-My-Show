@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package.json package-lock.json ./
 
+# Installing chokidar manually to resolve compatibility issues with watchpack.
+RUN npm install chokidar@3 --legacy-peer-deps
+
 # Force install a compatible PostCSS version to fix the issue
 RUN npm install postcss@8.4.21 postcss-safe-parser@6.0.0 --legacy-peer-deps
 

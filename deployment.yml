@@ -1,3 +1,4 @@
+# Book My Show Application Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,6 +17,20 @@ spec:
     spec:
       containers:
       - name: bms-container
-        image: kastrov/bms:latest  # Replace with your Docker image
+        image: ${DOCKER_IMAGE}  # Placeholder for dynamic replacement
         ports:
         - containerPort: 3000  # Replace with the port your app runs on
+
+---
+# Book My Show Application Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: bms-service
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 3000
+  selector:
+    app: bms
