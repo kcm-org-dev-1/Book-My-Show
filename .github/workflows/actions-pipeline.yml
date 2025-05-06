@@ -1,6 +1,15 @@
 name: End to End CI/CD for Book My Show Application
 
 on:
+  push:
+    branches:
+      - "master"
+      - "task/**"
+  pull_request:
+    branches:
+      - "master"
+      - "task/**"
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
