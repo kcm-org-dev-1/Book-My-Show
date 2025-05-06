@@ -18,6 +18,7 @@ on:
         description: "Enter Docker Repository & Image Name, Eg: <dockerhub_repository_name>/<image_name>:<image_tag>"
         required: true
         type: string
+        default: ${{ github.repository }}:${{ github.ref_name }}
       Resource_group_name:
         description: "Enter Resource Group Name"
         required: true
@@ -56,153 +57,10 @@ jobs:
       
       - name: Docker Build
         run: |
-          docker build -t ${{ github.event.inputs.Docker_Image_Name }} bookmyshow-app
-
+          DOCKER_IMAGE_NAME=${{ github.event.inputs.Docker_Image_Name || github.repository }}:${{ github.ref_name }}
+          docker build -t $DOCKER_IMAGE_NAME bookmyshow-app
       - name: Docker Push
         if: ${{ github.event.inputs.is_push_image == 'true' }}
         run: |
-          docker push ${{ github.event.inputs.Docker_Image_Name }}
-
-      - name: Trivy Installation
-        run: |
-          sudo apt-get install wget apt-transport-https gnupg lsb-release -y
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -y
-          sudo apt-get install trivy -y
-
-      - name: Trivy Fs Scan
-        run: trivy fs --format table -o fs-report.json .
-
-      - name: Gitleaks Installation
-        run: sudo apt-get install gitleaks -y
-
-      - name: Gitleaks Code Scan
-        run: gitleaks detect --source . -r gitileaks-report.json --report-format json -f json
-
-      - name: Upload file-system artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Trivy-fs-report
-          path: fs-report.json
-
-      - name: Upload Gitileaks artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Gitileaks-report
-          path: gitileaks-report.json
-
-      - name: Display Trivy File System Report in Summary
-        run: |
-          echo "### Trivy File System Scan Report" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat fs-report.json >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-      - name: Trivy image Scan
-        run: trivy image --format table -o image-report.html ${{ github.event.inputs.Docker_Image_Name }}
-
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Trivy-Docker-image-report
-          path: image-report.html
-
-# Create AKS with terraform
-  iac-aks-creation:
-    runs-on: ubuntu-latest
-    needs: docker_build-push
-    if: ${{ github.event.inputs.is_deploy_image == 'true' }}
-    env:
-      TF_VAR_azure_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      TF_VAR_azure_client_id: ${{ secrets.AZURE_CLIENT_ID }}
-      TF_VAR_azure_client_secret: ${{ secrets.AZURE_CLIENT_SECRET }}
-      TF_VAR_azure_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
-      TF_VAR_resource_group_name: ${{ github.event.inputs.Resource_group_name }}
-      TF_VAR_aks_cluster_name: ${{ github.event.inputs.AKS_Cluster_Name }}
-
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
-
-      - name: Terraform Initialization
-        run: |
-          cd aks_tf_scripts
-          terraform init
-
-      - name: Terraform Plan
-        run: |
-          cd aks_tf_scripts
-          terraform plan
-
-      - name: Terraform Apply
-        run: |
-          cd aks_tf_scripts
-          terraform apply -auto-approve
-
-# Deploy to image to AKS
-  deploy_to_AKS:
-    runs-on: ubuntu-latest
-    needs: iac-aks-creation
-    if: ${{ github.event.inputs.is_deploy_image == 'true' }}
-
-    steps:
-    - uses: actions/checkout@v4
-
-    # Need to provide Federated Identity credentials point to this particular repo & branch for OIDC-based authentication.
-    - name: Azure Login
-      uses: Azure/login@v2.2.0
-      with:
-        # Paste output of `az ad sp create-for-rbac` as value of secret variable: AZURE_CREDENTIALS
-        # creds: # optional
-        # ClientId of the Azure Service principal created.
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}  # optional
-        # TenantId of the Azure Service principal created.
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}  # optional
-        # Azure subscriptionId
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}  # optional
-        auth-type: SERVICE_PRINCIPAL  # optional, default is SERVICE_PRINCIPAL
-            
-    - name: Azure Kubernetes set context
-      uses: Azure/aks-set-context@v3
-      with:
-        # Resource Group Name
-        resource-group: ${{ github.event.inputs.Resource_group_name }}
-        # AKS Cluster Name
-        cluster-name: ${{ github.event.inputs.AKS_Cluster_Name }}
-
-
-    - name: Create secret in Kubernetes cluster
-      uses: Azure/k8s-create-secret@v4.0
-      with:
-        # Choose the target Kubernetes namespace. If the namespace is not provided, the commands will run in the default namespace.
-        # namespace: # optional
-        # Type of Kubernetes secret. Defaults to 'kubernetes.io/dockerconfigjson'.
-        secret-type: docker-registry # optional, default is kubernetes.io/dockerconfigjson
-        # Name of the secret. You can use this secret name in the Kubernetes YAML configuration file.
-        secret-name: docker-image-pull-secret
-        # Container Registry URL
-        container-registry-url: https://index.docker.io/v1/ # optional
-        container-registry-username: ${{ secrets.DOCKERHUB_USERNAME }}
-        container-registry-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v4
-      with:
-        version: latest
-
-    - name: Replace Image in Deployment File
-      run: |
-        export DOCKER_IMAGE=${{ github.event.inputs.Docker_Image_Name }}
-        envsubst < deployment.yml > deployment-processed.yml
-
-    - name: Deploy to Kubernetes cluster
-      uses: Azure/k8s-deploy@v4.9
-      with:
-        manifests: deployment-processed.yml
-        images: ${{ github.event.inputs.Docker_Image_Name }}
-        imagepullsecrets: docker-image-pull-secret
-        action: deploy
+          DOCKER_IMAGE_NAME=${{ github.event.inputs.Docker_Image_Name || github.repository }}:${{ github.ref_name }}
+          docker push $DOCKER_IMAGE_NAME
