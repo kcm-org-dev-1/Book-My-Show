@@ -60,7 +60,9 @@ jobs:
         id: set_image_name
         run: |
           if [ -z "${{ github.event.inputs.Docker_Image_Name }}" ]; then
-            echo "DOCKER_IMAGE_NAME=${{ github.repository }}:${{ github.ref_name }}" >> $GITHUB_ENV
+           LOWERCASE_REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+           echo "LOWERCASE_REPO_NAME=$LOWERCASE_REPO_NAME" >> $GITHUB_ENV
+            echo "DOCKER_IMAGE_NAME=$LOWERCASE_REPO_NAME:${{ github.ref_name }}" >> $GITHUB_ENV
           else
             echo "DOCKER_IMAGE_NAME=${{ github.event.inputs.Docker_Image_Name }}" >> $GITHUB_ENV
           fi
