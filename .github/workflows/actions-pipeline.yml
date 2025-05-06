@@ -28,14 +28,6 @@ on:
         required: true
         type: string
         default: ${{ github.repository }}:${{ github.ref_name }}
-      Resource_group_name:
-        description: "Enter Resource Group Name"
-        required: true
-        type: string
-      AKS_Cluster_Name:
-        description: "Enter AKS Cluster Name"
-        required: true
-        type: string
 
 # The error occurs because the `id-token: write` permission is not enabled in the workflow.
 # This permission is required for OIDC-based authentication when using the `Azure/login` action.
