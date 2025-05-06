@@ -25,7 +25,7 @@ on:
         type: boolean
       Docker_Image_Name:
         description: "Enter Docker Repository & Image Name, Eg: <dockerhub_repository_name>/<image_name>:<image_tag>"
-        required: true
+        #required: true
         #default: "${{ github.repository }}:${{ github.ref_name }}"
         type: string
 
