@@ -63,6 +63,7 @@ jobs:
             echo "DOCKER_IMAGE_NAME=${{ github.repository }}:${{ github.ref_name }}" >> $GITHUB_ENV
           else
             echo "DOCKER_IMAGE_NAME=${{ github.event.inputs.Docker_Image_Name }}" >> $GITHUB_ENV
+          fi
 
       - name: Docker Build
         run: |
