@@ -26,8 +26,8 @@ on:
       Docker_Image_Name:
         description: "Enter Docker Repository & Image Name, Eg: <dockerhub_repository_name>/<image_name>:<image_tag>"
         required: true
+        default: "${{ github.repository }}:${{ github.ref_name }}"
         type: string
-        default: ${{ github.repository }}:${{ github.ref_name }}
 
 # The error occurs because the `id-token: write` permission is not enabled in the workflow.
 # This permission is required for OIDC-based authentication when using the `Azure/login` action.
