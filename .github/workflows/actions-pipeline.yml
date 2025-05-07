@@ -75,3 +75,8 @@ jobs:
         if: ${{ github.event.inputs.is_push_image == 'true' }}
         run: |
           docker push $DOCKER_IMAGE_NAME
+
+      - name: Post-run step
+        if: always()
+        run: |
+          python3 get-pipeline_logs.py
