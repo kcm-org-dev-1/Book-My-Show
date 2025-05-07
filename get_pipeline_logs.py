@@ -2,22 +2,25 @@ import os
 import requests
 import zipfile
 
-# Replace these with your values
-OWNER = "kcm-org-dev-1"      # Replace with your repo owner
-REPO = "Book-My-Show"        # Replace with your repo name
-
-# GitHub API base URL
-BASE_URL = f"https://api.github.com/repos/{OWNER}/{REPO}/actions/runs"
-
-# load_dotenv()
-# TOKEN = os.getenv("GITHUB_TOKEN")
-# Headers for authentication
-HEADERS = {
-    "Authorization": f"token {TOKEN}",
-    "Accept": "application/vnd.github.v3+json",
-}
-
 def get_latest_logs():
+    # Read environment variables
+    owner = os.getenv("OWNER")
+    repo = os.getenv("REPO")
+    token = os.getenv("TOKEN")
+
+    if not owner or not repo or not token:
+        print("Error: OWNER, REPO, and TOKEN environment variables must be set.")
+        return
+
+    # GitHub API base URL
+    BASE_URL = f"https://api.github.com/repos/{owner}/{repo}/actions/runs"
+
+    # Headers for authentication
+    HEADERS = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
     # Get the latest workflow runs
     response = requests.get(BASE_URL, headers=HEADERS)
     response.raise_for_status()
