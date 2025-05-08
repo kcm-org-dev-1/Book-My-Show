@@ -80,7 +80,7 @@ jobs:
 
       - name: Docker Build
         run: |
-          docker build -f bookmyshow-app/Dockerfile -t $DOCKER_IMAGE_NAME -f bookmyshow-app/Dockerfile .
+          docker build -t $DOCKER_IMAGE_NAME .
     # bookmyshow-app
 
       - name: Docker Push
