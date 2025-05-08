@@ -80,7 +80,8 @@ jobs:
 
       - name: Docker Build
         run: |
-          docker build -t $DOCKER_IMAGE_NAME cm/
+          docker build -t $DOCKER_IMAGE_NAME bookmyshow-app
+# Dockerfile path: bookmyshow-app/Dockerfile
 
       - name: Docker Push
         if: ${{ github.event.inputs.is_push_image == 'true' }}
